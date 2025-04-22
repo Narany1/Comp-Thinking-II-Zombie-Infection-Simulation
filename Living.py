@@ -1,7 +1,7 @@
 import random
 
 
-class living:
+class living():
 
     def __init__(self, name, health, strength, intellect, location):
         self.health = random.randint(50, 101)
@@ -29,6 +29,40 @@ class living:
         current_stats = self.strength + self.health + self.intellect + 10
         win_rate = 50
         win_rate += current_stats - foe_stats
+        run = random.randint(1, 101)
+
+        return run <= win_rate
+
+    def convert(obj, source_list, target_class, target_list):
+        """
+        Converts an object to a different class and moves it between lists.
+
+        Args:
+            obj: The object to convert
+            source_list: The list containing the original object
+            target_class: The class to convert the object to
+            target_list: The list to add the converted object to
+
+        Returns:
+            tuple: (updated target_list, updated source_list)
+        """
+        # Create a new instance of the target class
+        new_obj = target_class(name=None, health=None, strength=None, intellect=None, location=None)
+
+        # Copy over the stats from the original object
+        new_obj.set_health(obj.get_health())
+        new_obj.set_strength(obj.get_strength())
+        new_obj.set_intellect(obj.get_intellect())
+        new_obj.set_location(obj.get_location()[0], obj.get_location()[1])
+
+        # Add the new object to the target list
+        target_list.append(new_obj)
+
+        # Remove the original object from the source list
+        if obj in source_list:
+            source_list.remove(obj)
+
+        return target_list, source_list
 
     def get_location(self):
         return self.location
@@ -54,3 +88,6 @@ class living:
 
     def set_intellect(self, number):
         self.intellect = number
+
+    def randomAction(self):
+        pass
