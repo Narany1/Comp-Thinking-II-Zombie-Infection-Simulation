@@ -1,18 +1,12 @@
-from Living import living
+from Living import Living
 import random
 
 
-class Mutated(living):
-    def __init__(self, name, health, strength, intellect, location):
-        super().__init__(name, health, strength, intellect, location)
-
+class Mutated(Living):
     def scavenge(self):
         self.location[0] += random.randint(-5, 6) + 8
         self.location[1] += random.randint(-5, 6) + 8
         self.check_in_bounds()
-
-    def fight(self, foe):
-        return super().fight(foe)
 
     def flee(self):
         self.location[0] += random.randint(-5, 6) - 10
@@ -27,26 +21,18 @@ class Mutated(living):
         self.strength += 10
 
     def randomAction(self, infected_list):
-        randomNum = random.randint(0, 4)
-        if randomNum == 0:
+        action = random.randint(0, 4)
+        if action == 0:
             self.scavenge()
-        elif randomNum == 1:
-            if infected_list:
-                # Find nearest infected to fight
-                nearest = None
-                min_distance = float('inf')
-                for infected in infected_list:
-                    dist = ((infected.get_location()[0] - self.location[0]) ** 2 +
-                            (infected.get_location()[1] - self.location[1]) ** 2) ** 0.5
-                    if dist < min_distance:
-                        min_distance = dist
-                        nearest = infected
-
-                if nearest and min_distance <= 2:
-                    self.fight(nearest)
-        elif randomNum == 2:
+        elif action == 1 and infected_list:
+            nearest = min(infected_list, key=lambda i: ((i.get_location()[0] - self.location[0]) ** 2 + (i.get_location()[1] - self.location[1]) ** 2) ** 0.5)
+            dist = ((nearest.get_location()[0] - self.location[0]) ** 2 + (nearest.get_location()[1] - self.location[1]) ** 2) ** 0.5
+            if dist <= 2:
+                if self.fight(nearest):
+                    infected_list.remove(nearest)
+        elif action == 2:
             self.flee()
-        elif randomNum == 3:
+        elif action == 3:
             self.rest()
-        elif randomNum == 4:
+        elif action == 4:
             self.eat()

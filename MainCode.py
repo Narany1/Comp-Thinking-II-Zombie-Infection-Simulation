@@ -1,109 +1,75 @@
 from Susceptible import Susceptible
 from Mutated import Mutated
 from Infected import Infected
+import matplotlib.pyplot as plt
 import random
 
 
-def susceptibleList(s):
-    sList = []
-    for i in range(s):
-        susceptible = Susceptible("Human" + str(i), None, None, None, [random.randint(0, 100), random.randint(0, 100)])
-        sList.append(susceptible)
-    return sList
-
-
-def mutateList(m):
-    mList = []
-    for i in range(m):
-        mutated = Mutated("Mutant" + str(i), None, None, None, [random.randint(0, 100), random.randint(0, 100)])
-        mList.append(mutated)
-    return mList
-
-
-def infectedList(i):
-    iList = []
-    for i in range(i):
-        infected = Infected("Zombie" + str(i), None, None, None, [random.randint(0, 100), random.randint(0, 100)])
-        iList.append(infected)
-    return iList
-
+def create_population(cls, count, name_prefix):
+    return [cls(f"{name_prefix}{i}", None, None, None, [random.randint(0, 100), random.randint(0, 100)]) for i in range(count)]
 
 def simulation(s, i, m):
-    listS = susceptibleList(s)
-    listM = mutateList(m)
-    listI = infectedList(i)
-    listR = []  # Removed/Dead
-
+    listS = create_population(Susceptible, s, "Human")
+    listM = create_population(Mutated, m, "Mutant")
+    listI = create_population(Infected, i, "Zombie")
+    listR = []
     hours = 0
-    max_hours = 1000  # To prevent infinite loops
+    susceptible_counts = []
+    infected_counts = []
+    mutated_counts = []
+    removed_counts = []
+    time_steps = []
 
-    print(f"Starting simulation with {len(listS)} Susceptible, {len(listI)} Infected, and {len(listM)} Mutated")
 
-    while len(listS) > 0:
+    print(f"Starting simulation with {len(listS)} Susceptible, {len(listI)} Infected, {len(listM)} Mutated")
+
+    while listS and hours < 1000:
         hours += 1
 
-        # Process Susceptible individuals
-        for s in list(listS):  # Use a copy to avoid modification during iteration
+        for s in list(listS):
             s.randomAction(listI)
-
-            # Check for encounters with infected
             for infected in list(listI):
                 dx = abs(infected.get_location()[0] - s.get_location()[0])
                 dy = abs(infected.get_location()[1] - s.get_location()[1])
-
                 if dx <= 2 and dy <= 2:
-                    # Encounter!
-                    if random.randint(0, 100) < 10:  # 10% chance of successful fight
-                        if s.fight(infected):
-                            listR.append(infected)
-                            listI.remove(infected)
+                    if random.randint(0, 100) < 10 and s.fight(infected):
+                        listI.remove(infected)
+                        listR.append(infected)
                     else:
-                        # Getting infected
-                        if random.randint(0, 100) < 95:  # 95% chance of infection
-                            new_infected = Infected("Infected", None, None, None,
-                                                    [s.get_location()[0], s.get_location()[1]])
-                            listI.append(new_infected)
-                        else:  # 5% chance of mutation
-                            new_mutated = Mutated("Mutated", None, None, None,
-                                                  [s.get_location()[0], s.get_location()[1]])
-                            listM.append(new_mutated)
-
-                        # Either way, remove from susceptible
+                        if random.randint(0, 100) < 95:
+                            listI.append(Infected("Infected", None, None, None, s.get_location().copy()))
+                        else:
+                            listM.append(Mutated("Mutated", None, None, None, s.get_location().copy()))
                         listS.remove(s)
                         break
 
-        # Process Infected individuals
         for infected in list(listI):
             infected.randomAction(listS)
 
-        # Process Mutated individuals
         for mutated in list(listM):
             mutated.randomAction(listI)
 
-            # Check for encounters with infected
-            for infected in list(listI):
-                dx = abs(infected.get_location()[0] - mutated.get_location()[0])
-                dy = abs(infected.get_location()[1] - mutated.get_location()[1])
+        susceptible_counts.append(len(listS))
+        infected_counts.append(len(listI))
+        mutated_counts.append(len(listM))
+        removed_counts.append(len(listR))
+        time_steps.append(hours)
 
-                if dx <= 2 and dy <= 2:
-                    # Battle!
-                    if random.randint(0, 100) < 60:  # Mutants have better odds (60%)
-                        if mutated.fight(infected):
-                            listR.append(infected)
-                            listI.remove(infected)
-
-        # Every 24 hours, print status
         if hours % 24 == 0:
-            print(
-                f"Day {hours // 24}: {len(listS)} Susceptible, {len(listI)} Infected, {len(listM)} Mutated, {len(listR)} Removed")
-
-    result = f"Simulation ended after {hours} hours.\n"
-    result += f"Susceptible: {len(listS)}\n"
-    result += f"Infected: {len(listI)}\n"
-    result += f"Mutated: {len(listM)}\n"
-    result += f"Removed: {len(listR)}"
-
-    return result
+            print(f"Day {hours // 24}: {len(listS)} Susceptible, {len(listI)} Infected, {len(listM)} Mutated, {len(listR)} Removed")
+    plt.figure(figsize=(10, 6))
+    plt.plot(time_steps, susceptible_counts, label="Susceptible", color="blue")
+    plt.plot(time_steps, infected_counts, label="Infected", color="red")
+    plt.plot(time_steps, mutated_counts, label="Mutated", color="green")
+    plt.plot(time_steps, removed_counts, label="Removed", color="gray")
+    plt.xlabel("Time (Hours)")
+    plt.ylabel("Population Count")
+    plt.title("Virus Spread Simulation Over Time")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+    return f"Simulation ended after {hours} hours.\nSusceptible: {len(listS)}\nInfected: {len(listI)}\nMutated: {len(listM)}\nRemoved: {len(listR)}"
 
 
 if __name__ == "__main__":
